@@ -30,8 +30,8 @@ workflow germlineWgs {
     Array[String] gvcf_gq_bands
     Array[Array[String]] intervals
     Int? ploidy
-    File qc_intervals
-    File variant_reporting_intervals
+    File? qc_intervals
+    File? variant_reporting_intervals
     File vep_cache_dir_zip
     String vep_ensembl_assembly
     String vep_ensembl_version
@@ -53,6 +53,7 @@ workflow germlineWgs {
     String cnvkit_method = "wgs"  # enum ["hybrid", "amplicon", "wgs"]
     File? cnvkit_reference_cnn
     Boolean? cnvkit_scatter_plot
+    Boolean cnvkit_heatmap = false
     Boolean? cnvkit_male_reference
     String? cnvkit_vcf_name
     File? manta_call_regions
@@ -76,6 +77,7 @@ workflow germlineWgs {
     Array[String]? vep_to_table_fields
     Int? cnv_filter_min_size
     File? blocklist_bedpe
+    Float germline_filter_gnomAD_maximum_population_allele_frequency
     String disclaimer_text = "Workflow source can be found at https://github.com/genome/analysis-workflows"
   }
 
@@ -128,7 +130,8 @@ workflow germlineWgs {
     coding_filter=coding_filter,
     vep_to_table_fields=vep_to_table_fields,
     variants_to_table_fields=variants_to_table_fields,
-    variants_to_table_genotype_fields=variants_to_table_genotype_fields
+    variants_to_table_genotype_fields=variants_to_table_genotype_fields,
+    germline_filter_gnomAD_maximum_population_allele_frequency=germline_filter_gnomAD_maximum_population_allele_frequency
   }
 
   call asalb.addStringAtLineBgzipped as addDisclaimerFilteredVcf {
@@ -183,6 +186,7 @@ workflow germlineWgs {
     cnvkit_method=cnvkit_method,
     cnvkit_reference_cnn=cnvkit_reference_cnn,
     cnvkit_scatter_plot=cnvkit_scatter_plot,
+    cnvkit_heatmap=cnvkit_heatmap,
     cnvkit_male_reference=cnvkit_male_reference,
     cnvkit_vcf_name=cnvkit_vcf_name,
     cnv_deletion_depth=cnv_filter_deletion_depth,
@@ -199,6 +203,7 @@ workflow germlineWgs {
     merge_estimate_sv_distance=merge_estimate_sv_distance,
     merge_min_sv_size=merge_min_sv_size,
     snps_vcf=detectVariants.final_vcf,
+    snps_vcf_tbi=detectVariants.final_vcf_tbi,
     sv_alt_abundance_percentage=sv_filter_alt_abundance_percentage,
     sv_paired_count=sv_filter_paired_count,
     sv_split_count=sv_filter_split_count,
@@ -271,10 +276,11 @@ workflow germlineWgs {
     File vep_summary = detectVariants.vep_summary
     File? cn_diagram = svDetectVariants.cn_diagram
     File? cn_scatter_plot = svDetectVariants.cn_scatter_plot
-    File tumor_antitarget_coverage = svDetectVariants.tumor_antitarget_coverage
-    File tumor_target_coverage = svDetectVariants.tumor_target_coverage
-    File tumor_bin_level_ratios = svDetectVariants.tumor_bin_level_ratios
-    File tumor_segmented_ratios = svDetectVariants.tumor_segmented_ratios
+    File? cn_heatmap = svDetectVariants.cn_heatmap
+    File sample_antitarget_coverage = svDetectVariants.sample_antitarget_coverage
+    File sample_target_coverage = svDetectVariants.sample_target_coverage
+    File sample_bin_level_ratios = svDetectVariants.sample_bin_level_ratios
+    File sample_segmented_ratios = svDetectVariants.sample_segmented_ratios
     File cnvkit_vcf = svDetectVariants.cnvkit_vcf
     File cnvnator_cn_file = svDetectVariants.cnvnator_cn_file
     File cnvnator_root = svDetectVariants.cnvnator_root
@@ -283,7 +289,7 @@ workflow germlineWgs {
     File? manta_somatic_variants = svDetectVariants.manta_somatic_variants
     File manta_all_candidates = svDetectVariants.manta_all_candidates
     File manta_small_candidates = svDetectVariants.manta_small_candidates
-    File? manta_tumor_only_variants = svDetectVariants.manta_tumor_only_variants
+    File? manta_sample_only_variants = svDetectVariants.manta_sample_only_variants
     File smoove_output_variants = svDetectVariants.smoove_output_variants
     File final_tsv = addDisclaimerFinalTsv.output_file
     File filtered_tsv = addDisclaimerFilteredTsv.output_file

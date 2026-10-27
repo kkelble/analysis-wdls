@@ -22,7 +22,7 @@ workflow alignmentWgs {
     File omni_vcf
     File omni_vcf_tbi
 
-    File intervals
+    File? intervals
     String picard_metric_accumulation_level
     Array[File] bqsr_known_sites
     Array[File] bqsr_known_sites_tbi

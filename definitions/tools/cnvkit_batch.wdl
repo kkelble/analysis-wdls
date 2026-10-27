@@ -2,8 +2,8 @@ version 1.0
 
 task cnvkitBatch {
   input {
-    File tumor_bam
-    File tumor_bam_bai
+    File sample_bam
+    File sample_bam_bai
     File? bait_intervals
     File? access
     File? normal_bam
@@ -19,11 +19,11 @@ task cnvkitBatch {
   }
 
 
-  Int size_needed_gb = 10 + round(size([tumor_bam, bait_intervals, access, normal_bam, reference_fasta, reference_cnn], "GB") * 2)
+  Int size_needed_gb = 10 + round(size([sample_bam, bait_intervals, access, normal_bam, reference_fasta, reference_cnn], "GB") * 2)
   runtime {
     preemptible: 1
     maxRetries: 2
-    memory: "4GB"
+    memory: "8GB"
     cpu: 1
     # We use a forked cnvkit so we can get access to root privileges
     # which let us write files at /cromwell_root/
@@ -35,7 +35,7 @@ task cnvkitBatch {
     # touch each bai to ensure they have a timestamp after the bam
     # Avoids a reindex which has thrown exceptions
     # this is why we need root privileges
-    touch ~{tumor_bam_bai}
+    touch ~{sample_bam_bai}
     touch ~{normal_bam_bai}
 
     if ~{defined(normal_bam)}; then
@@ -44,7 +44,7 @@ task cnvkitBatch {
       REF="--reference ~{reference_cnn}"
     fi
     /usr/bin/python3 /usr/local/bin/cnvkit.py batch \
-    ~{tumor_bam} $REF \
+    ~{sample_bam} $REF \
     ~{if defined(bait_intervals) then "--targets ~{bait_intervals}" else ""} \
     ~{if defined(access) then "--access ~{access}" else ""} \
     --method ~{method} \
@@ -63,20 +63,20 @@ task cnvkitBatch {
     File? normal_antitarget_coverage = normal_base + ".antitargetcoverage.cnn"
     File? normal_target_coverage = normal_base + ".targetcoverage.cnn"
     File? reference_coverage = "reference.cnn"
-    File? cn_diagram = basename(tumor_bam, ".bam") + "-diagram.pdf"
-    File? cn_scatter_plot = basename(tumor_bam, ".bam") + "-scatter.pdf"
-    File tumor_antitarget_coverage = basename(tumor_bam, ".bam") + ".antitargetcoverage.cnn"
-    File tumor_target_coverage = basename(tumor_bam, ".bam") + ".targetcoverage.cnn"
-    File tumor_bin_level_ratios = basename(tumor_bam, ".bam") + ".cnr"
-    File tumor_segmented_ratios = basename(tumor_bam, ".bam") + ".cns"
+    File? cn_diagram = basename(sample_bam, ".bam") + "-diagram.pdf"
+    File? cn_scatter_plot = basename(sample_bam, ".bam") + "-scatter.png"
+    File sample_antitarget_coverage = basename(sample_bam, ".bam") + ".antitargetcoverage.cnn"
+    File sample_target_coverage = basename(sample_bam, ".bam") + ".targetcoverage.cnn"
+    File sample_bin_level_ratios = basename(sample_bam, ".bam") + ".cnr"
+    File sample_segmented_ratios = basename(sample_bam, ".bam") + ".cns"
   }
 }
 
 
 workflow wf {
   input {
-    File tumor_bam
-    File tumor_bam_bai
+    File sample_bam
+    File sample_bam_bai
     File? bait_intervals
     File? access
     File? normal_bam
@@ -93,8 +93,8 @@ workflow wf {
 
   call cnvkitBatch {
     input:
-    tumor_bam=tumor_bam,
-    tumor_bam_bai=tumor_bam_bai,
+    sample_bam=sample_bam,
+    sample_bam_bai=sample_bam_bai,
     bait_intervals=bait_intervals,
     access=access,
     normal_bam=normal_bam,

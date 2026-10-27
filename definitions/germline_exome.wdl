@@ -4,7 +4,7 @@ import "alignment_exome.wdl" as ae
 import "types.wdl"  # !UnusedImport
 
 import "tools/interval_list_expand.wdl" as ile
-import "subworkflows/germline_detect_variants.wdl" as gdv
+import "subworkflows/joint_genotype_germline_detect_variants.wdl" as gdv
 import "tools/bam_to_cram.wdl" as btc
 import "tools/index_cram.wdl" as ic
 
@@ -19,7 +19,7 @@ workflow germlineExome {
     File reference_bwt
     File reference_pac
     File reference_0123
-    Array[SequenceData] sequence
+    Array[SampleData] samples
     TrimmingOptions? trimming
     Array[File] bqsr_known_sites
     Array[File] bqsr_known_sites_tbi
@@ -52,32 +52,35 @@ workflow germlineExome {
     String? coding_filter
   }
 
-  call ae.alignmentExome as alignmentAndQc {
-    input:
-    reference=reference,
-    reference_fai=reference_fai,
-    reference_dict=reference_dict,
-    reference_alt=reference_alt,
-    reference_amb=reference_amb,
-    reference_ann=reference_ann,
-    reference_bwt=reference_bwt,
-    reference_pac=reference_pac,
-    reference_0123=reference_0123,
-    sequence=sequence,
-    trimming=trimming,
-    bqsr_known_sites=bqsr_known_sites,
-    bqsr_known_sites_tbi=bqsr_known_sites_tbi,
-    bait_intervals=bait_intervals,
-    target_intervals=target_intervals,
-    per_base_intervals=per_base_intervals,
-    per_target_intervals=per_target_intervals,
-    summary_intervals=summary_intervals,
-    omni_vcf=omni_vcf,
-    omni_vcf_tbi=omni_vcf_tbi,
-    picard_metric_accumulation_level=picard_metric_accumulation_level,
-    qc_minimum_mapping_quality=qc_minimum_mapping_quality,
-    qc_minimum_base_quality=qc_minimum_base_quality
-  }
+  scatter (sample in samples) {
+    call ae.alignmentExome as alignmentAndQc {
+      input:
+      reference=reference,
+      reference_fai=reference_fai,
+      reference_dict=reference_dict,
+      reference_alt=reference_alt,
+      reference_amb=reference_amb,
+      reference_ann=reference_ann,
+      reference_bwt=reference_bwt,
+      reference_pac=reference_pac,
+      reference_0123=reference_0123,
+      sequence=sample.sequences,
+      final_name=sample.sample_name,
+      trimming=trimming,
+      bqsr_known_sites=bqsr_known_sites,
+      bqsr_known_sites_tbi=bqsr_known_sites_tbi,
+      bait_intervals=bait_intervals,
+      target_intervals=target_intervals,
+      per_base_intervals=per_base_intervals,
+      per_target_intervals=per_target_intervals,
+      summary_intervals=summary_intervals,
+      omni_vcf=omni_vcf,
+      omni_vcf_tbi=omni_vcf_tbi,
+      picard_metric_accumulation_level=picard_metric_accumulation_level,
+      qc_minimum_mapping_quality=qc_minimum_mapping_quality,
+      qc_minimum_base_quality=qc_minimum_base_quality
+    }
+  } #output is bam, bam_bai, and verify_bam_id_metrics
 
   call ile.intervalListExpand as padTargetIntervals {
     input:
@@ -85,16 +88,22 @@ workflow germlineExome {
     roi_padding=target_interval_padding
   }
 
-  call gdv.germlineDetectVariants as detectVariants {
+  #make verify bam id metrics usuable input to detect variants
+  scatter (qc in alignmentAndQc.qc_metrics) {
+    File verify_bam_id_metric = select_first([qc.verify_bam_id_metrics])
+  }
+
+  #call detectVariants with the array of bam files from alignment and qc step
+  call gdv.jointGermlineDetectVariants as detectVariants {
     input:
     reference=reference,
     reference_fai=reference_fai,
     reference_dict=reference_dict,
-    bam=alignmentAndQc.bam,
-    bai=alignmentAndQc.bam_bai,
+    bams=alignmentAndQc.bam,
+    bais=alignmentAndQc.bam_bai,
     gvcf_gq_bands=gvcf_gq_bands,
     intervals=intervals,
-    verify_bam_id_metrics=select_first([alignmentAndQc.qc_metrics.verify_bam_id_metrics]),
+    verify_bam_id_metrics=verify_bam_id_metric,
     ploidy=ploidy,
     vep_cache_dir_zip=vep_cache_dir_zip,
     synonyms_file=synonyms_file,
@@ -112,23 +121,27 @@ workflow germlineExome {
     coding_filter=coding_filter
   }
 
-  call btc.bamToCram {
-    input:
-    bam=alignmentAndQc.bam,
-    reference=reference,
-    reference_fai=reference_fai,
-    reference_dict=reference_dict
+  scatter (bam in alignmentAndQc.bam) {
+    call btc.bamToCram {
+      input:
+      bam=bam,
+      reference=reference,
+      reference_fai=reference_fai,
+      reference_dict=reference_dict
+    }
   }
 
-  call ic.indexCram {
-    input: cram=bamToCram.cram
+  scatter (cram in bamToCram.cram) {
+    call ic.indexCram {
+      input: cram=cram
+    }
   }
 
   output {
-    File cram = indexCram.indexed_cram
-    File cram_crai = indexCram.indexed_cram_crai
-    File mark_duplicates_metrics = alignmentAndQc.mark_duplicates_metrics
-    QCMetrics qc_metrics = alignmentAndQc.qc_metrics
+    Array[File] cram = indexCram.indexed_cram
+    Array[File] cram_crai = indexCram.indexed_cram_crai
+    Array[File] mark_duplicates_metrics = alignmentAndQc.mark_duplicates_metrics
+    Array[QCMetrics] qc_metrics = alignmentAndQc.qc_metrics
     File raw_vcf = detectVariants.raw_vcf
     File raw_vcf_tbi = detectVariants.raw_vcf_tbi
     File final_vcf = detectVariants.final_vcf
@@ -140,3 +153,4 @@ workflow germlineExome {
     File filtered_tsv = detectVariants.filtered_tsv
   }
 }
+

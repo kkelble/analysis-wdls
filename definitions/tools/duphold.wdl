@@ -3,11 +3,13 @@ version 1.0
 task duphold {
   input {
     File bam
+    File bai
     String output_vcf_name = "duphold_annotated.vcf"
     File reference
     File reference_fai
     File reference_dict
     File? snps_vcf
+    File? snps_vcf_tbi
     File sv_vcf
   }
 

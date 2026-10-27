@@ -3,6 +3,7 @@ version 1.0
 task smoove {
   input {
     Array[File] bams
+    Array[File] bais
     String cohort_name = "SV"
     File reference
     File reference_fai

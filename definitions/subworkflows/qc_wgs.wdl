@@ -19,7 +19,7 @@ workflow qcWgs {
     File reference_fai
     File reference_dict
 
-    File intervals
+    File? intervals
 
     File omni_vcf
     File omni_vcf_tbi

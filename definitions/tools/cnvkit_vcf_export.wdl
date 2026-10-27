@@ -13,17 +13,17 @@ task cnvkitVcfExport {
   runtime {
     preemptible: 1
     maxRetries: 2
-    memory: "8GB"
+    memory: "12GB"
     docker: "mgibio/cnvkit:0.9.9"
     disks: "local-disk ~{space_needed_gb} HDD"
   }
 
   command <<<
-    /usr/bin/python /usr/local/bin/cnvkit.py call \
+    /usr/bin/python3 /usr/local/bin/cnvkit.py call \
     ~{if(defined(segment_filter)) then "--filter " + segment_filter else ""} \
     ~{cns_file} \
-    -y ~{male_reference} -o adjusted.tumor.cns \
-    && /usr/bin/python /usr/local/bin/cnvkit.py export vcf adjusted.tumor.cns \
+    ~{true="-y" false="" male_reference} -o adjusted.sample.cns \
+    && /usr/bin/python3 /usr/local/bin/cnvkit.py export vcf adjusted.sample.cns \
     ~{true="-y" false="" male_reference} \
     ~{if defined(cnr_file) then "--cnr " + cnr_file else ""} \
     -o ~{output_name}

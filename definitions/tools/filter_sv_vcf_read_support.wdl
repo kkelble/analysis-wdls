@@ -5,8 +5,8 @@ task filterSvVcfReadSupport {
     Float abundance_percentage = 0.1
     File input_vcf
     String output_vcf_name = "filtered_sv.vcf"
-    Int? paired_count
-    Int? split_count
+    Int? paired_count = 2
+    Int? split_count = 2
     String vcf_source  # enum ["manta" "smoove"]
   }
 

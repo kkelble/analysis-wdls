@@ -23,6 +23,7 @@ workflow singleSampleSvCallers {
     String cnvkit_method  # enum ["hybrid", "amplicon", "wgs"]
     File? cnvkit_reference_cnn
     Boolean? cnvkit_scatter_plot
+    Boolean cnvkit_heatmap
     Boolean? cnvkit_male_reference
     String? cnvkit_vcf_name
     File? manta_call_regions
@@ -37,6 +38,7 @@ workflow singleSampleSvCallers {
     Int merge_min_sv_size
     File? smoove_exclude_regions
     File? snps_vcf
+    File? snps_vcf_tbi
     String genome_build
     Float? sv_alt_abundance_percentage
     Int? sv_paired_count
@@ -53,9 +55,10 @@ workflow singleSampleSvCallers {
     drop_low_coverage=cnvkit_drop_low_coverage,
     method=cnvkit_method,
     reference_cnn=cnvkit_reference_cnn,
-    tumor_bam=bam,
-    tumor_bam_bai=bam_bai,
+    sample_bam=bam,
+    sample_bam_bai=bam_bai,
     scatter_plot=cnvkit_scatter_plot,
+    heatmap=cnvkit_heatmap,
     male_reference=cnvkit_male_reference,
     cnvkit_vcf_name=cnvkit_vcf_name,
     segment_filter="cn",
@@ -115,14 +118,15 @@ workflow singleSampleSvCallers {
     reference=reference,
     reference_fai=reference_fai,
     reference_dict=reference_dict,
-    tumor_bam=bam,
-    tumor_bam_bai=bam_bai
+    sample_bam=bam,
+    sample_bam_bai=bam_bai
   }
 
   call sprcf.svPairedReadCallerFilter as runMantaFilter {
     input:
     abundance_percentage=sv_alt_abundance_percentage,
     bam=bam,
+    bai=bam_bai,
     deletion_depth=cnv_deletion_depth,
     duplication_depth=cnv_duplication_depth,
     output_vcf_name="filtered_manta.vcf",
@@ -130,15 +134,17 @@ workflow singleSampleSvCallers {
     reference_fai=reference_fai,
     reference_dict=reference_dict,
     snps_vcf=snps_vcf,
+    snps_vcf_tbi=snps_vcf_tbi,
     sv_paired_count=sv_paired_count,
     sv_split_count=sv_split_count,
-    sv_vcf=select_first([runManta.tumor_only_variants]),
+    sv_vcf=select_first([runManta.diploid_variants]),
     vcf_source="manta"
   }
 
   call s.smoove as runSmoove {
     input:
     bams=[bam],
+    bais=[bam_bai],
     exclude_regions=smoove_exclude_regions,
     reference=reference,
     reference_fai=reference_fai,
@@ -149,6 +155,7 @@ workflow singleSampleSvCallers {
     input:
     abundance_percentage=sv_alt_abundance_percentage,
     bam=bam,
+    bai=bam_bai,
     deletion_depth=cnv_deletion_depth,
     duplication_depth=cnv_duplication_depth,
     output_vcf_name="filtered_smoove.vcf",
@@ -156,6 +163,7 @@ workflow singleSampleSvCallers {
     reference_fai=reference_fai,
     reference_dict=reference_dict,
     snps_vcf=snps_vcf,
+    snps_vcf_tbi=snps_vcf_tbi,
     sv_paired_count=sv_paired_count,
     sv_split_count=sv_split_count,
     sv_vcf=runSmoove.output_vcf,
@@ -172,6 +180,7 @@ workflow singleSampleSvCallers {
     same_strand=merge_same_strand,
     same_type=merge_same_type,
     snps_vcf=snps_vcf,
+    snps_vcf_tbi=snps_vcf_tbi,
     blocklist_bedpe=blocklist_bedpe,
     sv_vcfs=[runCnvkitFilter.filtered_vcf, runCnvnatorFilter.filtered_vcf, runMantaFilter.filtered_vcf, runSmooveFilter.filtered_vcf]
   }
@@ -179,10 +188,11 @@ workflow singleSampleSvCallers {
   output {
     File? cn_diagram = runCnvkit.cn_diagram
     File? cn_scatter_plot = runCnvkit.cn_scatter_plot
-    File tumor_antitarget_coverage = runCnvkit.tumor_antitarget_coverage
-    File tumor_target_coverage = runCnvkit.tumor_target_coverage
-    File tumor_bin_level_ratios = runCnvkit.tumor_bin_level_ratios
-    File tumor_segmented_ratios = runCnvkit.tumor_segmented_ratios
+    File? cn_heatmap = runCnvkit.cn_heatmap
+    File sample_antitarget_coverage = runCnvkit.sample_antitarget_coverage
+    File sample_target_coverage = runCnvkit.sample_target_coverage
+    File sample_bin_level_ratios = runCnvkit.sample_bin_level_ratios
+    File sample_segmented_ratios = runCnvkit.sample_segmented_ratios
     File cnvkit_filtered_vcf = runCnvkitFilter.filtered_vcf
     File cnvkit_vcf = runCnvkitRawIndex.indexed_vcf
     File cnvnator_cn_file = runCnvnator.cn_file
@@ -194,7 +204,7 @@ workflow singleSampleSvCallers {
     File? manta_somatic_variants = runManta.somatic_variants
     File manta_all_candidates = runManta.all_candidates
     File manta_small_candidates = runManta.small_candidates
-    File? manta_tumor_only_variants = runManta.tumor_only_variants
+    File? manta_sample_only_variants = runManta.sample_only_variants
     File smoove_output_variants = runSmoove.output_vcf
     File smoove_filtered_vcf = runSmooveFilter.filtered_vcf
     File survivor_merged_vcf = runMerge.survivor_merged_sv_vcf

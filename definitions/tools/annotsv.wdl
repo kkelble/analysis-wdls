@@ -6,6 +6,7 @@ task annotsv {
     File input_vcf
     String output_tsv_name = "AnnotSV.tsv"
     Array[File] snps_vcf
+    Array[File] snps_vcf_tbi
   }
 
   Int space_needed_gb = 10 + round(size(snps_vcf, "GB") + size(input_vcf, "GB"))

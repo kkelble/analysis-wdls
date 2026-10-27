@@ -13,7 +13,7 @@ workflow germlineFilterVcf {
     String? coding_filter
     Float germline_filter_gnomAD_maximum_population_allele_frequency
     String gnomad_field_name
-    File limit_variant_intervals
+    File? limit_variant_intervals
     File reference
     File reference_fai
     File reference_dict

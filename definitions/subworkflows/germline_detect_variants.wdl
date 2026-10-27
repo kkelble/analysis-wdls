@@ -32,7 +32,7 @@ workflow germlineDetectVariants {
     File? synonyms_file
     Boolean? annotate_coding_only
     Array[VepCustomAnnotation] vep_custom_annotations
-    File limit_variant_intervals
+    File? limit_variant_intervals
     Array[String] variants_to_table_fields = ["CHROM","POS","ID","REF","ALT"]
     Array[String]? variants_to_table_genotype_fields
     Array[String]? vep_to_table_fields
@@ -92,7 +92,7 @@ workflow germlineDetectVariants {
     limit_variant_intervals=limit_variant_intervals
   }
 
-  call vtt.variantsToTable as  filteredVariantsToTable {
+  call vtt.variantsToTable as filteredVariantsToTable {
     input:
     vcf=filterVcf.filtered_vcf,
     vcf_tbi=filterVcf.filtered_vcf_tbi,

@@ -10,6 +10,7 @@ workflow svPairedReadCallerFilter {
   input {
     Float? abundance_percentage
     File bam
+    File bai
     Float? deletion_depth
     Float? duplication_depth
     String? output_vcf_name
@@ -17,6 +18,7 @@ workflow svPairedReadCallerFilter {
     File reference_fai
     File reference_dict
     File? snps_vcf
+    File? snps_vcf_tbi
     Int? sv_paired_count
     Int? sv_split_count
     File sv_vcf
@@ -35,10 +37,12 @@ workflow svPairedReadCallerFilter {
   call d.duphold as dupholdAnnotate {
     input:
     bam=bam,
+    bai=bai,
     reference=reference,
     reference_fai=reference_fai,
     reference_dict=reference_dict,
     snps_vcf=snps_vcf,
+    snps_vcf_tbi=snps_vcf_tbi,
     sv_vcf=readSupportFilter.filtered_sv_vcf
   }
 

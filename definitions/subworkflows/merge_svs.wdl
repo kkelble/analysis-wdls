@@ -16,6 +16,7 @@ workflow mergeSvs {
     Boolean same_strand
     Boolean same_type
     File? snps_vcf
+    File? snps_vcf_tbi
     Array[File] sv_vcfs
     File? blocklist_bedpe
   }
@@ -44,7 +45,8 @@ workflow mergeSvs {
     genome_build=genome_build,
     input_vcf=filterBlocklistSurvivor.filtered_sv_vcf,
     output_tsv_name="SURVIVOR-merged-AnnotSV.tsv",
-    snps_vcf=select_all([snps_vcf])
+    snps_vcf=select_all([snps_vcf]),
+    snps_vcf_tbi=select_all([snps_vcf_tbi])
   }
 
   call bm.bcftoolsMerge as bcftoolsMergeSvVcfs {
@@ -67,7 +69,8 @@ workflow mergeSvs {
     genome_build=genome_build,
     input_vcf=filterBlocklistBcftools.filtered_sv_vcf,
     output_tsv_name="bcftools-merged-AnnotSV.tsv",
-    snps_vcf=select_all([snps_vcf])
+    snps_vcf=select_all([snps_vcf]),
+    snps_vcf_tbi=select_all([snps_vcf_tbi])
   }
 
   call af.annotsvFilter as bcftoolsAnnotsvFilter {

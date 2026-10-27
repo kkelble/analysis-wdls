@@ -39,7 +39,7 @@ task gatkHaplotypeCaller {
 
     CONTAMINATION_FILE=~{contamination_fraction}
     if [ -z "$CONTAMINATION_FILE" ]; then
-        CONTAMINATION_ARG="--contamination $(head -n 1 $CONTAMINATION_FILE})"
+        CONTAMINATION_ARG="--contamination $(head -n 1 $CONTAMINATION_FILE)"
     fi
 
     # do the task itself

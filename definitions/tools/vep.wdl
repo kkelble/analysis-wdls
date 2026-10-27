@@ -36,7 +36,7 @@ task vepTask {
     memory: "64GB"
     bootDiskSizeGb: 30
     cpu: 4
-    docker: "mgibio/vep_helper-cwl:vep_113.3_v1"
+    docker: "kaitlynkelble/vep_helper:vep_116.v1"
     disks: "local-disk ~{space_needed_gb} HDD"
   }
 
@@ -62,6 +62,7 @@ task vepTask {
     -i ~{vcf} \
     ~{if defined(synonyms_file) then "--synonyms ~{synonyms_file}" else ""} \
     ~{if coding_only then "--coding_only" else ""} \
+    --individual_zyg all \
     --~{pick} \
     --dir ~{cache_dir} \
     --fasta ~{reference} \

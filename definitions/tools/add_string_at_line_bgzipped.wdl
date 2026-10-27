@@ -12,14 +12,14 @@ task addStringAtLineBgzipped {
   runtime {
     preemptible: 1
     maxRetries: 2
-    docker: "quay.io/biocontainers/samtools:1.11-h6270b1f_0"
+    docker: "quay.io/biocontainers/samtools:1.11--h6270b1f_0"
     memory: "4GB"
     disks: "local-disk ~{space_needed_gb} HDD"
     bootDiskSizeGb: space_needed_gb
   }
 
   command <<<
-    zcat ~{input_file} | awk -v n=~{line_number} -v s="~{some_text}" 'NR == n {print s} {print}' | /opt/htslib/bin/bgzip
+    zcat ~{input_file} | awk -v n=~{line_number} -v s="~{some_text}" 'NR == n {print s} {print}' | /usr/local/bin/bgzip -c > "~{output_name}"
   >>>
 
   output {

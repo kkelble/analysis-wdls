@@ -15,6 +15,12 @@ struct SequenceData {
   String? readgroup
 }
 
+# added for joint germline calling
+struct SampleData {
+  String sample_name 
+  Array[SequenceData] sequences
+}
+
 struct TrimmingOptions {
   File adapters
   Int min_overlap
