@@ -18,6 +18,7 @@ workflow mergeSvs {
     File? snps_vcf
     File? snps_vcf_tbi
     Array[File] sv_vcfs
+    Array[File] sv_vcf_tbis
     File? blocklist_bedpe
   }
 
@@ -54,7 +55,8 @@ workflow mergeSvs {
     merge_method="none",
     output_type="v",
     output_vcf_name="bcftools-sv-merged.vcf",
-    vcfs=sv_vcfs
+    vcfs=sv_vcfs,
+    tbis=sv_vcf_tbis
   }
 
   call fsvbb.filterSvVcfBlocklistBedpe as filterBlocklistBcftools {

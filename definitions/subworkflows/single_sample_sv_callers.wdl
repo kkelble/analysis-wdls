@@ -182,7 +182,8 @@ workflow singleSampleSvCallers {
     snps_vcf=snps_vcf,
     snps_vcf_tbi=snps_vcf_tbi,
     blocklist_bedpe=blocklist_bedpe,
-    sv_vcfs=[runCnvkitFilter.filtered_vcf, runCnvnatorFilter.filtered_vcf, runMantaFilter.filtered_vcf, runSmooveFilter.filtered_vcf]
+    sv_vcfs=[runCnvkitFilter.filtered_vcf, runCnvnatorFilter.filtered_vcf, runMantaFilter.filtered_vcf, runSmooveFilter.filtered_vcf],
+    sv_vcf_tbis=[runCnvkitFilter.filtered_vcf_tbi, runCnvnatorFilter.filtered_vcf_tbi, runMantaFilter.filtered_vcf_tbi, runSmooveFilter.filtered_vcf_tbi]
   }
 
   output {

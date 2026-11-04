@@ -77,7 +77,7 @@ workflow germlineWgs {
     Array[String]? vep_to_table_fields
     Int? cnv_filter_min_size
     File? blocklist_bedpe
-    Float germline_filter_gnomAD_maximum_population_allele_frequency
+    Float germline_filter_maximum_population_allele_frequency
     String disclaimer_text = "Workflow source can be found at https://github.com/genome/analysis-workflows"
   }
 
@@ -131,47 +131,15 @@ workflow germlineWgs {
     vep_to_table_fields=vep_to_table_fields,
     variants_to_table_fields=variants_to_table_fields,
     variants_to_table_genotype_fields=variants_to_table_genotype_fields,
-    germline_filter_gnomAD_maximum_population_allele_frequency=germline_filter_gnomAD_maximum_population_allele_frequency
+    germline_filter_maximum_population_allele_frequency=germline_filter_maximum_population_allele_frequency
   }
 
-  call asalb.addStringAtLineBgzipped as addDisclaimerFilteredVcf {
-    input:
-    input_file=detectVariants.filtered_vcf,
-    line_number=2,
-    some_text="##disclaimer=~{disclaimer_text}",
-    output_name=basename(detectVariants.filtered_vcf)
+  call iv.indexVcf as indexFilteredVcf {
+    input: vcf=detectVariants.filtered_vcf
   }
 
-  call iv.indexVcf as indexDisclaimerFilteredVcf {
-    input: vcf=addDisclaimerFilteredVcf.output_file
-  }
-
-  call asalb.addStringAtLineBgzipped as addDisclaimerFinalVcf {
-    input:
-    input_file=detectVariants.final_vcf,
-    line_number=2,
-    some_text="##disclaimer=~{disclaimer_text}",
-    output_name=basename(detectVariants.final_vcf)
-  }
-
-  call iv.indexVcf as indexDisclaimerFinalVcf {
-    input: vcf=addDisclaimerFinalVcf.output_file
-  }
-
-  call asal.addStringAtLine as addDisclaimerFilteredTsv {
-    input:
-    input_file=detectVariants.filtered_tsv,
-    line_number=1,
-    some_text="#~{disclaimer_text}",
-    output_name=basename(detectVariants.filtered_tsv)
-  }
-
-  call asal.addStringAtLine as addDisclaimerFinalTsv {
-    input:
-    input_file=detectVariants.final_tsv,
-    line_number=1,
-    some_text="#~{disclaimer_text}",
-    output_name=basename(detectVariants.final_tsv)
+  call iv.indexVcf as indexFinalVcf {
+    input: vcf=detectVariants.final_vcf
   }
 
   call sssc.singleSampleSvCallers as svDetectVariants {
@@ -211,46 +179,6 @@ workflow germlineWgs {
     blocklist_bedpe=blocklist_bedpe
   }
 
-  call asalb.addStringAtLineBgzipped as addDisclaimerSurvivorSvVcf {
-    input:
-    input_file=svDetectVariants.survivor_merged_vcf,
-    line_number=2,
-    some_text="##disclaimer=~{disclaimer_text}",
-    output_name=basename(svDetectVariants.survivor_merged_vcf)
-  }
-
-  call asalb.addStringAtLineBgzipped as addDisclaimerBcftoolsSvVcf {
-    input:
-    input_file=svDetectVariants.bcftools_merged_vcf,
-    line_number=2,
-    some_text="##disclaimer=~{disclaimer_text}",
-    output_name=basename(svDetectVariants.bcftools_merged_vcf)
-  }
-
-  call asal.addStringAtLine as addDisclaimerSurvivorSvTsv {
-    input:
-    input_file=svDetectVariants.survivor_merged_annotated_tsv,
-    line_number=1,
-    some_text="#~{disclaimer_text}",
-    output_name=basename(svDetectVariants.survivor_merged_annotated_tsv)
-  }
-
-  call asal.addStringAtLine as addDisclaimerBcftoolsSvTsv {
-    input:
-    input_file=svDetectVariants.bcftools_merged_annotated_tsv,
-    line_number=1,
-    some_text="#~{disclaimer_text}",
-    output_name=basename(svDetectVariants.bcftools_merged_annotated_tsv)
-  }
-
-  call asal.addStringAtLine as addDisclaimerBcftoolsFilteredSvTsv {
-    input:
-    input_file=svDetectVariants.bcftools_merged_filtered_annotated_tsv,
-    line_number=1,
-    some_text="#~{disclaimer_text}",
-    output_name=basename(svDetectVariants.bcftools_merged_filtered_annotated_tsv)
-  }
-
   call btc.bamToCram {
     input:
     bam=alignmentAndQc.bam,
@@ -265,14 +193,15 @@ workflow germlineWgs {
 
   output {
     File cram = indexCram.indexed_cram
+    File crai = indexCram.indexed_cram_crai
     File mark_duplicates_metrics = alignmentAndQc.mark_duplicates_metrics
     QCMetrics qc_metrics = alignmentAndQc.qc_metrics
     File raw_vcf = detectVariants.raw_vcf
     File raw_vcf_tbi = detectVariants.raw_vcf_tbi
-    File final_vcf = indexDisclaimerFinalVcf.indexed_vcf
-    File final_vcf_tbi = indexDisclaimerFinalVcf.indexed_vcf_tbi
-    File filtered_vcf = indexDisclaimerFilteredVcf.indexed_vcf
-    File filtered_vcf_tbi = indexDisclaimerFilteredVcf.indexed_vcf_tbi
+    File final_vcf = indexFinalVcf.indexed_vcf
+    File final_vcf_tbi = indexFinalVcf.indexed_vcf_tbi
+    File filtered_vcf = indexFilteredVcf.indexed_vcf
+    File filtered_vcf_tbi = indexFilteredVcf.indexed_vcf_tbi
     File vep_summary = detectVariants.vep_summary
     File? cn_diagram = svDetectVariants.cn_diagram
     File? cn_scatter_plot = svDetectVariants.cn_scatter_plot
@@ -291,16 +220,16 @@ workflow germlineWgs {
     File manta_small_candidates = svDetectVariants.manta_small_candidates
     File? manta_sample_only_variants = svDetectVariants.manta_sample_only_variants
     File smoove_output_variants = svDetectVariants.smoove_output_variants
-    File final_tsv = addDisclaimerFinalTsv.output_file
-    File filtered_tsv = addDisclaimerFilteredTsv.output_file
+    File final_tsv = detectVariants.final_tsv
+    File filtered_tsv = detectVariants.filtered_tsv
     File cnvkit_filtered_vcf = svDetectVariants.cnvkit_filtered_vcf
     File cnvnator_filtered_vcf = svDetectVariants.cnvnator_filtered_vcf
     File manta_filtered_vcf = svDetectVariants.manta_filtered_vcf
     File smoove_filtered_vcf = svDetectVariants.smoove_filtered_vcf
-    File survivor_merged_vcf = addDisclaimerSurvivorSvVcf.output_file
-    File survivor_merged_annotated_tsv = addDisclaimerSurvivorSvTsv.output_file
-    File bcftools_merged_vcf = addDisclaimerBcftoolsSvVcf.output_file
-    File bcftools_merged_annotated_tsv = addDisclaimerBcftoolsSvTsv.output_file
-    File bcftools_merged_filtered_annotated_tsv = addDisclaimerBcftoolsFilteredSvTsv.output_file
+    File survivor_merged_vcf = svDetectVariants.survivor_merged_vcf
+    File survivor_merged_annotated_tsv = svDetectVariants.survivor_merged_annotated_tsv
+    File bcftools_merged_vcf = svDetectVariants.bcftools_merged_vcf
+    File bcftools_merged_annotated_tsv = svDetectVariants.bcftools_merged_annotated_tsv
+    File bcftools_merged_filtered_annotated_tsv = svDetectVariants.bcftools_merged_filtered_annotated_tsv
   }
 }

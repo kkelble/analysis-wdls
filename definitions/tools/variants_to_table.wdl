@@ -31,7 +31,7 @@ task variantsToTable {
   String outfile = "variants.tsv"
   command <<<
     /gatk/gatk --java-options -Xmx4g VariantsToTable -O ~{outfile} \
-    -R ~{reference} --variant ~{vcf} \
+    -R ~{reference} --variant ~{vcf} --split-multi-allelic \
     ~{sep=" " prefix("-F ", fields)} ~{sep=" " prefix("-GF ", genotype_fields)}
   >>>
 

@@ -8,6 +8,7 @@ task bcftoolsMerge {
     String output_type = "z"  # enum ["b", "u", "z", "v"]
     String output_vcf_name = "bcftools_merged.vcf.gz"
     Array[File] vcfs
+    Array[File] tbis
   }
 
   Int space_needed_gb = 10 + round(2 * size(vcfs, "GB"))
@@ -21,9 +22,9 @@ task bcftoolsMerge {
 
   command <<<
     /opt/bcftools/bin/bcftools merge \
-    --force-samples ~{force_merge} \
+    ~{if force_merge then "--force-samples" else ""} \
     --merge ~{merge_method} \
-    --missing-to-ref ~{missing_ref} \
+    ~{if missing_ref then "--missing-to-ref" else ""} \
     --output-type ~{output_type} \
     --output ~{output_vcf_name} \
     ~{sep=" " vcfs}

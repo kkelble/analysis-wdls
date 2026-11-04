@@ -48,7 +48,8 @@ workflow germlineExome {
     Array[String]? variants_to_table_fields
     Array[String]? variants_to_table_genotype_fields
     Array[String]? vep_to_table_fields
-    Float germline_filter_gnomAD_maximum_population_allele_frequency
+    String max_pop_field_name
+    Float germline_filter_maximum_population_allele_frequency
     String? coding_filter
   }
 
@@ -117,8 +118,10 @@ workflow germlineExome {
     vep_custom_annotations=vep_custom_annotations,
     variants_to_table_fields=variants_to_table_fields,
     variants_to_table_genotype_fields=variants_to_table_genotype_fields,
-    germline_filter_gnomAD_maximum_population_allele_frequency=germline_filter_gnomAD_maximum_population_allele_frequency,
-    coding_filter=coding_filter
+    max_pop_field_name=max_pop_field_name,
+    germline_filter_maximum_population_allele_frequency=germline_filter_maximum_population_allele_frequency,
+    coding_filter=coding_filter,
+    proband_name=samples[0].sample_name
   }
 
   scatter (bam in alignmentAndQc.bam) {
@@ -138,8 +141,7 @@ workflow germlineExome {
   }
 
   output {
-    Array[File] cram = indexCram.indexed_cram
-    Array[File] cram_crai = indexCram.indexed_cram_crai
+    Array[File] cram_and_crai = flatten([indexCram.indexed_cram, indexCram.indexed_cram_crai])
     Array[File] mark_duplicates_metrics = alignmentAndQc.mark_duplicates_metrics
     Array[QCMetrics] qc_metrics = alignmentAndQc.qc_metrics
     File raw_vcf = detectVariants.raw_vcf

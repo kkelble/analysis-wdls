@@ -2,6 +2,7 @@ version 1.0
 
 import "../tools/filter_vcf_coding_variant.wdl" as fvcv
 import "../tools/filter_vcf_custom_allele_freq.wdl" as fvcaf
+import "../tools/filter_vcf_proband.wdl" as fvp
 import "../tools/staged_rename.wdl" as sr
 import "../tools/bgzip.wdl" as b
 import "../tools/index_vcf.wdl" as iv
@@ -11,12 +12,13 @@ workflow germlineFilterVcf {
   input {
     File annotated_vcf
     String? coding_filter
-    Float germline_filter_gnomAD_maximum_population_allele_frequency
-    String gnomad_field_name
+    Float germline_filter_maximum_population_allele_frequency
+    String max_pop_field_name
     File? limit_variant_intervals
     File reference
     File reference_fai
     File reference_dict
+    String proband_name
   }
 
   call fvcv.filterVcfCodingVariant as codingVariantFilter {
@@ -28,13 +30,19 @@ workflow germlineFilterVcf {
   call fvcaf.filterVcfCustomAlleleFreq as gnomadFrequencyFilter {
     input:
     vcf=codingVariantFilter.filtered_vcf,
-    maximum_population_allele_frequency=germline_filter_gnomAD_maximum_population_allele_frequency,
-    field_name=gnomad_field_name
+    maximum_population_allele_frequency=germline_filter_maximum_population_allele_frequency,
+    field_name=max_pop_field_name
+  }
+
+  call fvp.filterVcfProband as probandFilter {
+    input:
+    input_vcf=gnomadFrequencyFilter.filtered_vcf,
+    proband_name=proband_name
   }
 
   call sr.stagedRename as setFilteredVcfName {
     input:
-    original=gnomadFrequencyFilter.filtered_vcf,
+    original=probandFilter.filtered_vcf,
     name="annotated.filtered.vcf"
   }
 

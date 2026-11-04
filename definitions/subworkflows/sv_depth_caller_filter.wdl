@@ -41,5 +41,6 @@ workflow svDepthCallerFilter {
 
   output {
     File filtered_vcf=filteredVcfIndex.indexed_vcf
+    File filtered_vcf_tbi=filteredVcfIndex.indexed_vcf_tbi
   }
 }
