@@ -79,6 +79,7 @@ workflow germlineWgs {
     File? blocklist_bedpe
     Float germline_filter_maximum_population_allele_frequency
     String disclaimer_text = "Workflow source can be found at https://github.com/genome/analysis-workflows"
+    String proband_name
   }
 
   call aw.alignmentWgs as alignmentAndQc {
@@ -131,7 +132,8 @@ workflow germlineWgs {
     vep_to_table_fields=vep_to_table_fields,
     variants_to_table_fields=variants_to_table_fields,
     variants_to_table_genotype_fields=variants_to_table_genotype_fields,
-    germline_filter_maximum_population_allele_frequency=germline_filter_maximum_population_allele_frequency
+    germline_filter_maximum_population_allele_frequency=germline_filter_maximum_population_allele_frequency,
+    proband_name=proband_name
   }
 
   call iv.indexVcf as indexFilteredVcf {

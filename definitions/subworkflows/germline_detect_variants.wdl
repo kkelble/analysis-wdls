@@ -39,6 +39,7 @@ workflow germlineDetectVariants {
     String final_tsv_prefix = "variants"
     String max_pop_field_name = "gnomADe_AF"  # only change with gnomad_filter annotation
     Float germline_filter_maximum_population_allele_frequency
+    String proband_name
   }
 
   call f.freemix {
@@ -90,7 +91,7 @@ workflow germlineDetectVariants {
     max_pop_field_name=max_pop_field_name,
     germline_filter_maximum_population_allele_frequency=germline_filter_maximum_population_allele_frequency,
     limit_variant_intervals=limit_variant_intervals,
-    proband_name="MCUI2034_WGS_1"
+    proband_name=proband_name
   }
 
   call vtt.variantsToTable as filteredVariantsToTable {
